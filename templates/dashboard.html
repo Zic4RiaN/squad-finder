@@ -34,7 +34,7 @@
 <div class="row g-4">
     <div class="col-lg-4">
         <div class="card-custom p-4 sticky-top shadow-lg" style="top: 90px;">
-            <h4 class="fw-bold mb-4 text-indigo-400"><i class="fas fa-plus-circle me-2"></i>Publicar Squad</h4>
+            <h4 class="fw-bold mb-4 text-blue-400"><i class="fas fa-plus-circle me-2"></i>Publicar Squad</h4>
             <form id="formCrear" onsubmit="event.preventDefault(); crear();">
                 <div class="mb-3">
                     <label class="form-label small text-secondary">Juego</label>
@@ -59,7 +59,7 @@
 
     <div class="col-lg-8">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold"><i class="fas fa-stream me-2 text-indigo-400"></i>Muro de Búsqueda</h3>
+            <h3 class="fw-bold"><i class="fas fa-stream me-2 text-blue-400"></i>Muro de Búsqueda</h3>
             <select id="filterJuego" class="form-select w-auto bg-dark text-white border-secondary shadow-sm" onchange="cargarSquads(this.value)">
                 <option value="">Todos los juegos</option>
             </select>
@@ -118,7 +118,7 @@
                     <div class="card-custom p-4 shadow-sm" style="border-left: 4px solid #6366f1; background: #1e293b; border-radius: 15px; margin-bottom: 1rem;">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
-                                <span class="text-indigo-400 fw-bold uppercase small d-block">${s.game_name}</span>
+                                <span class="text-blue-400 fw-bold uppercase small d-block">${s.game_name}</span>
                                 <span class="badge bg-dark border border-secondary text-secondary">${s.rank_required}</span>
                             </div>
                             

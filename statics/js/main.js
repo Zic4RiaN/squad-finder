@@ -41,7 +41,7 @@ async function loadSquads(gameSlug = '') {
 
             container.innerHTML += `
                 <div class="col-12 animate__animated animate__fadeIn">
-                    <div class="card-custom p-4 shadow-sm" style="border-left: 4px solid #6366f1">
+                    <div class="card-custom p-4 shadow-sm" style="border-left: 4px solid #0288DF">
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-indigo-400 fw-bold uppercase">${s.game_name || 'Juego'}</span>
                             <div class="d-flex gap-2">

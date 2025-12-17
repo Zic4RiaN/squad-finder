@@ -6,25 +6,25 @@
 {% block content %}
 <div class="max-w-md mx-auto mt-16 bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700 animate__animated animate__fadeIn">
     <div class="text-center mb-8">
-        <h2 class="text-3xl font-extrabold text-indigo-500">SquadFinder</h2>
+        <h2 class="text-3xl font-extrabold text-blue-500">SquadFinder</h2>
         <p class="text-gray-400 mt-2">Conecta con tu equipo ideal</p>
     </div>
 
     <div class="flex mb-6 border-b border-gray-700">
-        <button id="tab-login" onclick="toggleAuth('login')" class="flex-1 py-2 border-b-2 border-indigo-500 text-indigo-400 font-bold transition-all">Login</button>
+        <button id="tab-login" onclick="toggleAuth('login')" class="flex-1 py-2 border-b-2 border-blue-500 text-blue-400 font-bold transition-all">Login</button>
         <button id="tab-register" onclick="toggleAuth('register')" class="flex-1 py-2 text-gray-400 hover:text-gray-200 transition-all">Registro</button>
     </div>
 
     <form id="form-login" class="space-y-4" onsubmit="handleLogin(event)">
         <div>
             <label class="block text-sm font-medium mb-1 text-gray-300">Usuario</label>
-            <input type="text" id="login-username" required class="w-full p-2.5 bg-gray-900 border border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-white" placeholder="Tu usuario">
+            <input type="text" id="login-username" required class="w-full p-2.5 bg-gray-900 border border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white" placeholder="Tu usuario">
         </div>
         <div>
             <label class="block text-sm font-medium mb-1 text-gray-300">Contraseña</label>
-            <input type="password" id="login-password" required class="w-full p-2.5 bg-gray-900 border border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-white" placeholder="••••••••">
+            <input type="password" id="login-password" required class="w-full p-2.5 bg-gray-900 border border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white" placeholder="••••••••">
         </div>
-        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-lg transition-transform transform hover:scale-105">
             INGRESAR
         </button>
     </form>
@@ -60,8 +60,8 @@
         document.getElementById('form-login').classList.toggle('hidden', !isLogin);
         document.getElementById('form-register').classList.toggle('hidden', isLogin);
         
-        document.getElementById('tab-login').className = isLogin ? 'flex-1 py-2 border-b-2 border-indigo-500 text-indigo-400 font-bold' : 'flex-1 py-2 text-gray-400';
-        document.getElementById('tab-register').className = !isLogin ? 'flex-1 py-2 border-b-2 border-indigo-500 text-indigo-400 font-bold' : 'flex-1 py-2 text-gray-400';
+        document.getElementById('tab-login').className = isLogin ? 'flex-1 py-2 border-b-2 border-blue-500 text-blue-400 font-bold' : 'flex-1 py-2 text-gray-400';
+        document.getElementById('tab-register').className = !isLogin ? 'flex-1 py-2 border-b-2 border-blue-500 text-blue-400 font-bold' : 'flex-1 py-2 text-gray-400';
     }
 
     async function handleLogin(e) {
