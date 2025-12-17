@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Bienvenido - SquadFinder{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-16 bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700 animate__animated animate__fadeIn">
+    <div class="text-center mb-8">
+        <h2 class="text-3xl font-extrabold text-indigo-500">SquadFinder</h2>
+        <p class="text-gray-400 mt-2">Conecta con tu equipo ideal</p>
+    </div>
+
+    <div class="flex mb-6 border-b border-gray-700">
+        <button id="tab-login" onclick="toggleAuth('login')" class="flex-1 py-2 border-b-2 border-indigo-500 text-indigo-400 font-bold transition-all">Login</button>
+        <button id="tab-register" onclick="toggleAuth('register')" class="flex-1 py-2 text-gray-400 hover:text-gray-200 transition-all">Registro</button>
+    </div>
+
+    <form id="form-login" class="space-y-4" onsubmit="handleLogin(event)">
+        <div>
+            <label class="block text-sm font-medium mb-1 text-gray-300">Usuario</label>
+            <input type="text" id="login-username" required class="w-full p-2.5 bg-gray-900 border border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-white" placeholder="Tu usuario">
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1 text-gray-300">Contraseña</label>
+            <input type="password" id="login-password" required class="w-full p-2.5 bg-gray-900 border border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-white" placeholder="••••••••">
+        </div>
+        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+            INGRESAR
+        </button>
+    </form>
+
+    <form id="form-register" class="space-y-4 hidden" onsubmit="handleRegister(event)">
+        <div>
+            <label class="block text-sm font-medium mb-1 text-gray-300">Usuario</label>
+            <input type="text" id="reg-username" required class="w-full p-2.5 bg-gray-900 border border-gray-600 rounded-lg text-white">
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1 text-gray-300">Email</label>
+            <input type="email" id="reg-email" required class="w-full p-2.5 bg-gray-900 border border-gray-600 rounded-lg text-white">
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1 text-gray-300">Gamertag (Ej: Faker#SKT)</label>
+            <input type="text" id="reg-gamertag" required class="w-full p-2.5 bg-gray-900 border border-gray-600 rounded-lg text-white">
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1 text-gray-300">Contraseña</label>
+            <input type="password" id="reg-password" required class="w-full p-2.5 bg-gray-900 border border-gray-600 rounded-lg text-white">
+        </div>
+        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg transition-all">
+            CREAR CUENTA
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleAuth(type) {
+        const isLogin = type === 'login';
+        document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+        document.getElementById('form-register').classList.toggle('hidden', isLogin);
+        
+        document.getElementById('tab-login').className = isLogin ? 'flex-1 py-2 border-b-2 border-indigo-500 text-indigo-400 font-bold' : 'flex-1 py-2 text-gray-400';
+        document.getElementById('tab-register').className = !isLogin ? 'flex-1 py-2 border-b-2 border-indigo-500 text-indigo-400 font-bold' : 'flex-1 py-2 text-gray-400';
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        const username = document.getElementById('login-username').value;
+        const password = document.getElementById('login-password').value;
+
+        try {
+            const response = await fetch('/api/auth/login/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // GUARDAR DATOS EN LOCALSTORAGE
+                localStorage.setItem('access_token', data.access);
+                localStorage.setItem('refresh_token', data.refresh);
+                
+                // --- LÍNEA CLAVE PARA QUE FUNCIONE EL BOTÓN ELIMINAR ---
+                localStorage.setItem('current_user', username); 
+                
+                window.location.href = '/dashboard/';
+            } else {
+                alert("Error: Usuario o contraseña incorrectos.");
+            }
+        } catch (error) {
+            console.error("Login error:", error);
+        }
+    }
+
+    async function handleRegister(e) {
+        e.preventDefault();
+        const body = {
+            username: document.getElementById('reg-username').value,
+            email: document.getElementById('reg-email').value,
+            gamertag: document.getElementById('reg-gamertag').value,
+            password: document.getElementById('reg-password').value
+        };
+
+        try {
+            const response = await fetch('/api/auth/register/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (response.ok) {
+                alert("¡Cuenta creada! Ahora puedes iniciar sesión.");
+                toggleAuth('login');
+            } else {
+                const err = await response.json();
+                alert("Error: " + JSON.stringify(err));
+            }
+        } catch (error) {
+            console.error("Register error:", error);
+        }
+    }
+
+    // Si ya tiene token, saltar el login e ir directo al dashboard
+    if (localStorage.getItem('access_token')) {
+        window.location.href = '/dashboard/';
+    }
+</script>
+{% endblock %}

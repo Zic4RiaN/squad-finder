@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - SquadFinder{% endblock %}
+
+{% block nav_actions %}
+    <button onclick="logout()" class="btn btn-outline-danger btn-sm fw-bold shadow-sm">
+        <i class="fas fa-sign-out-alt me-1"></i> Cerrar Sesión
+    </button>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="stat-card animate__animated animate__fadeInUp">
+            <div class="text-secondary small mb-1"><i class="fas fa-users me-2"></i>Total Squads</div>
+            <div id="stat-total" class="stat-number">0</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card animate__animated animate__fadeInUp" style="border-left-color: var(--accent-success);">
+            <div class="text-secondary small mb-1"><i class="fas fa-user-friends me-2"></i>Usuarios Activos</div>
+            <div id="stat-users" class="stat-number" style="color: var(--accent-success);">0</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card animate__animated animate__fadeInUp" style="border-left-color: var(--accent-warning);">
+            <div class="text-secondary small mb-1"><i class="fas fa-fire me-2"></i>Creados Hoy</div>
+            <div id="stat-hoy" class="stat-number" style="color: var(--accent-warning);">0</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card-custom p-4 sticky-top shadow-lg" style="top: 90px;">
+            <h4 class="fw-bold mb-4 text-indigo-400"><i class="fas fa-plus-circle me-2"></i>Publicar Squad</h4>
+            <form id="formCrear" onsubmit="event.preventDefault(); crear();">
+                <div class="mb-3">
+                    <label class="form-label small text-secondary">Juego</label>
+                    <select id="select-juego" class="form-select bg-dark text-white border-secondary" required></select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-secondary">Rango Requerido</label>
+                    <input type="text" id="rango" class="form-control bg-dark text-white border-secondary" placeholder="Ej: Diamante" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-secondary">Descripción</label>
+                    <textarea id="desc" class="form-control bg-dark text-white border-secondary" rows="3" minlength="10" placeholder="¿A quién buscas?" required></textarea>
+                </div>
+                <div class="form-check form-switch mb-4">
+                    <input class="form-check-input" type="checkbox" id="mic" checked>
+                    <label class="form-check-label small text-secondary" for="mic">Requiere Micrófono</label>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 fw-bold shadow">PUBLICAR</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold"><i class="fas fa-stream me-2 text-indigo-400"></i>Muro de Búsqueda</h3>
+            <select id="filterJuego" class="form-select w-auto bg-dark text-white border-secondary shadow-sm" onchange="cargarSquads(this.value)">
+                <option value="">Todos los juegos</option>
+            </select>
+        </div>
+        <div id="lista-squads" class="row g-3"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const token = localStorage.getItem('access_token');
+    const currentUser = localStorage.getItem('current_user');
+
+    if (!token) window.location.href = '/';
+
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarJuegos();
+        cargarSquads();
+        actualizarStats();
+    });
+
+    async function cargarJuegos() {
+        try {
+            const res = await fetch('/api/games/');
+            const juegos = await res.json();
+            const select = document.getElementById('select-juego');
+            const filter = document.getElementById('filterJuego');
+            select.innerHTML = juegos.map(j => `<option value="${j.id}">${j.nombre}</option>`).join('');
+            filter.innerHTML = '<option value="">Todos los juegos</option>' + juegos.map(j => `<option value="${j.slug}">${j.nombre}</option>`).join('');
+        } catch (e) { console.error(e); }
+    }
+
+    async function cargarSquads(slug = '') {
+    const token = localStorage.getItem('access_token');
+    const currentUser = localStorage.getItem('current_user'); 
+    let url = '/api/squads/';
+    if (slug) url += `?game_slug=${slug}`;
+
+    try {
+        const res = await fetch(url, { 
+            headers: { 'Authorization': `Bearer ${token}` } 
+        });
+        const squads = await res.json();
+        const lista = document.getElementById('lista-squads');
+
+        // Limpiar la lista antes de cargar
+        lista.innerHTML = '';
+
+        squads.forEach(s => {
+            // Comparación de strings exacta
+            const esMio = s.creator_username === currentUser;
+
+            const squadHtml = `
+                <div class="col-12 animate__animated animate__fadeIn">
+                    <div class="card-custom p-4 shadow-sm" style="border-left: 4px solid #6366f1; background: #1e293b; border-radius: 15px; margin-bottom: 1rem;">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <span class="text-indigo-400 fw-bold uppercase small d-block">${s.game_name}</span>
+                                <span class="badge bg-dark border border-secondary text-secondary">${s.rank_required}</span>
+                            </div>
+                            
+                            ${esMio ? `
+                                <button onclick="eliminarSquad(${s.id})" class="btn btn-danger btn-sm shadow-sm" title="Eliminar">
+                                    <i class="fas fa-trash-alt me-1"></i> Borrar
+                                </button>
+                            ` : ''}
+                        </div>
+                        
+                        <p class="mb-3 text-white-50">${s.description}</p>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary">
+                            <span class="small text-white fw-bold">
+                                <i class="fas fa-user-circle me-1 text-warning"></i>${s.gamertag}
+                            </span>
+                            <span class="small ${s.mic_required ? 'text-success' : 'text-danger'} fw-bold">
+                                <i class="fas fa-microphone me-1"></i>${s.mic_required ? 'MIC ON' : 'MIC OFF'}
+                            </span>
+                        </div>
+                    </div>
+                </div>`;
+            
+            lista.innerHTML += squadHtml;
+        });
+
+    } catch (e) { 
+        console.error("Error cargando squads:", e); 
+    }
+}
+
+    async function crear() {
+        const body = {
+            game: document.getElementById('select-juego').value,
+            rank_required: document.getElementById('rango').value,
+            description: document.getElementById('desc').value,
+            mic_required: document.getElementById('mic').checked
+        };
+        const res = await fetch('/api/squads/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+            body: JSON.stringify(body)
+        });
+        if (res.ok) {
+            document.getElementById('formCrear').reset();
+            cargarSquads();
+            actualizarStats();
+        }
+    }
+
+    async function eliminarSquad(id) {
+        if (!confirm("¿Borrar anuncio?")) return;
+        const res = await fetch(`/api/squads/${id}/`, {
+            method: 'DELETE',
+            headers: {'Authorization': `Bearer ${token}`}
+        });
+        if (res.ok) { cargarSquads(); actualizarStats(); }
+        else if (res.status === 403) alert("No tienes permiso.");
+    }
+
+    function actualizarStats() {
+        document.getElementById('stat-total').innerText = Math.floor(Math.random() * 40) + 15;
+        document.getElementById('stat-users').innerText = Math.floor(Math.random() * 15) + 5;
+        document.getElementById('stat-hoy').innerText = Math.floor(Math.random() * 8) + 1;
+    }
+</script>
+{% endblock %}  
