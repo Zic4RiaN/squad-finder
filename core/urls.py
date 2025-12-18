@@ -1,9 +1,6 @@
 from django.contrib import admin
 from django.urls import path
-from api.views import (
-    index_view, dashboard_view, # Vistas de Template
-    RegisterView, GameListView, SquadListCreateView, SquadDeleteView # Vistas API
-)
+from api.views import *
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 urlpatterns = [
@@ -18,5 +15,5 @@ urlpatterns = [
     path('api/auth/login/', TokenObtainPairView.as_view()),
     path('api/games/', GameListView.as_view()),
     path('api/squads/', SquadListCreateView.as_view()),
-    path('api/squads/<int:pk>/', SquadDeleteView.as_view()),
+    path('api/squads/<int:pk>/', SquadDetailDeleteView.as_view(), name='squad-detail-delete'),
 ]

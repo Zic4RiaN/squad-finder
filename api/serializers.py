@@ -17,12 +17,19 @@ class GameSerializer(serializers.ModelSerializer):
         model = Game
         fields = '__all__'
 
+from rest_framework import serializers
+from .models import SquadRequest
+
 class SquadRequestSerializer(serializers.ModelSerializer):
-    # Estas líneas NO son automáticas, debes escribirlas:
+    # Estas 3 líneas son obligatorias para que el Dashboard funcione
+    game_name = serializers.ReadOnlyField(source='game.nombre')
     gamertag = serializers.ReadOnlyField(source='creator.gamertag')
     creator_username = serializers.ReadOnlyField(source='creator.username') # <--- ESTA ES LA CLAVE
-    game_name = serializers.ReadOnlyField(source='game.nombre')
 
     class Meta:
         model = SquadRequest
-        fields = ['id', 'gamertag', 'creator_username', 'game_name', 'rank_required', 'description', 'mic_required', 'created_at']
+        # Asegúrate de que 'creator_username' esté en la lista de fields
+        fields = [
+            'id', 'game', 'game_name', 'rank_required', 
+            'description', 'mic_required', 'gamertag', 'creator_username'
+        ]

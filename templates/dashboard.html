@@ -34,7 +34,9 @@
 <div class="row g-4">
     <div class="col-lg-4">
         <div class="card-custom p-4 sticky-top shadow-lg" style="top: 90px;">
-            <h4 class="fw-bold mb-4 text-blue-400"><i class="fas fa-plus-circle me-2"></i>Publicar Squad</h4>
+            <h4 class="fw-bold mb-4 text-indigo-400">
+                <i class="fas fa-plus-circle me-2"></i>Publicar Squad
+            </h4>
             <form id="formCrear" onsubmit="event.preventDefault(); crear();">
                 <div class="mb-3">
                     <label class="form-label small text-secondary">Juego</label>
@@ -52,28 +54,86 @@
                     <input class="form-check-input" type="checkbox" id="mic" checked>
                     <label class="form-check-label small text-secondary" for="mic">Requiere Micrófono</label>
                 </div>
-                <button type="submit" class="btn btn-primary w-100 fw-bold shadow">PUBLICAR</button>
+                <button type="submit" class="btn btn-primary w-100 fw-bold shadow">
+                    <i class="fas fa-rocket me-2"></i>PUBLICAR
+                </button>
             </form>
         </div>
     </div>
 
     <div class="col-lg-8">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold"><i class="fas fa-stream me-2 text-blue-400"></i>Muro de Búsqueda</h3>
+            <h3 class="fw-bold"><i class="fas fa-stream me-2 text-indigo-400"></i>Muro de Búsqueda</h3>
             <select id="filterJuego" class="form-select w-auto bg-dark text-white border-secondary shadow-sm" onchange="cargarSquads(this.value)">
                 <option value="">Todos los juegos</option>
             </select>
         </div>
-        <div id="lista-squads" class="row g-3"></div>
+        <div id="lista-squads" class="row g-3">
+            </div>
     </div>
 </div>
+
+<div class="modal fade" id="squadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-gray-900 text-white border-secondary shadow-2xl">
+            <div class="modal-header border-secondary bg-gray-800">
+                <h5 class="modal-title fw-bold text-indigo-400" id="modalGame">Detalle del Squad</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-4">
+                    <label class="text-secondary small d-block mb-1 text-uppercase tracking-wider">Publicado por</label>
+                    <h4 id="modalGamertag" class="text-warning fw-bold mb-0"></h4>
+                </div>
+                <div class="mb-4">
+                    <label class="text-secondary small d-block mb-1 text-uppercase tracking-wider">Descripción del Squad</label>
+                    <p id="modalDesc" class="fs-5 text-gray-200" style="white-space: pre-wrap;"></p>
+                </div>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="bg-gray-800 p-3 rounded text-center">
+                            <small class="text-secondary d-block">Rango</small>
+                            <span id="modalRank" class="badge bg-indigo-600 mt-1"></span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="bg-gray-800 p-3 rounded text-center">
+                            <small class="text-secondary d-block">Micrófono</small>
+                            <span id="modalMic" class="fw-bold mt-1 d-block"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button class="btn btn-primary fw-bold px-4">Unirse al Squad</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-effect {
+        transition: all 0.25s ease;
+        cursor: pointer;
+    }
+    .hover-effect:hover {
+        transform: translateY(-5px);
+        background-color: #2d3748 !important;
+        border-color: #6366f1 !important;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.4) !important;
+    }
+    .bg-gray-800 { background-color: #1e293b; }
+    .bg-gray-900 { background-color: #0f172a; }
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    // Variables Globales
     const token = localStorage.getItem('access_token');
-    const currentUser = localStorage.getItem('current_user');
-
+    
+    // Redirigir si no hay token
     if (!token) window.location.href = '/';
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -82,107 +142,171 @@
         actualizarStats();
     });
 
+    // 1. Cerrar Sesión
+    function logout() {
+        localStorage.clear();
+        window.location.href = '/';
+    }
+
+    // 2. Cargar Juegos para el Select y Filtro
     async function cargarJuegos() {
         try {
             const res = await fetch('/api/games/');
             const juegos = await res.json();
             const select = document.getElementById('select-juego');
             const filter = document.getElementById('filterJuego');
+            
             select.innerHTML = juegos.map(j => `<option value="${j.id}">${j.nombre}</option>`).join('');
-            filter.innerHTML = '<option value="">Todos los juegos</option>' + juegos.map(j => `<option value="${j.slug}">${j.nombre}</option>`).join('');
-        } catch (e) { console.error(e); }
+            filter.innerHTML = '<option value="">Todos los juegos</option>' + 
+                            juegos.map(j => `<option value="${j.slug}">${j.nombre}</option>`).join('');
+        } catch (e) { console.error("Error juegos:", e); }
     }
 
-    async function cargarSquads(slug = '') {
-    const token = localStorage.getItem('access_token');
-    const currentUser = localStorage.getItem('current_user'); 
-    let url = '/api/squads/';
-    if (slug) url += `?game_slug=${slug}`;
-
+async function cargarSquads(slug = '') {
+    const currentUser = localStorage.getItem('current_user');
     try {
-        const res = await fetch(url, { 
-            headers: { 'Authorization': `Bearer ${token}` } 
+        const res = await fetch('/api/squads/', {
+            headers: {'Authorization': `Bearer ${token}`}
         });
         const squads = await res.json();
         const lista = document.getElementById('lista-squads');
-
-        // Limpiar la lista antes de cargar
-        lista.innerHTML = '';
-
-        squads.forEach(s => {
-            // Comparación de strings exacta
-            const esMio = s.creator_username === currentUser;
-
-            const squadHtml = `
-                <div class="col-12 animate__animated animate__fadeIn">
-                    <div class="card-custom p-4 shadow-sm" style="border-left: 4px solid #6366f1; background: #1e293b; border-radius: 15px; margin-bottom: 1rem;">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div>
-                                <span class="text-blue-400 fw-bold uppercase small d-block">${s.game_name}</span>
-                                <span class="badge bg-dark border border-secondary text-secondary">${s.rank_required}</span>
-                            </div>
-                            
-                            ${esMio ? `
-                                <button onclick="eliminarSquad(${s.id})" class="btn btn-danger btn-sm shadow-sm" title="Eliminar">
-                                    <i class="fas fa-trash-alt me-1"></i> Borrar
-                                </button>
-                            ` : ''}
+        lista.innerHTML = squads.map(s => {
+            console.log(`Squad de: ${s.creator_username} | ¿Es mío?: ${s.creator_username === currentUser}`);
+            const esMio = (s.creator_username === currentUser);
+            return `
+            <div class="col-12 animate__animated animate__fadeIn">
+                <div onclick="abrirDetalle(${s.id})" class="card-custom p-4 shadow-sm hover-effect" style="cursor: pointer; position: relative;">
+                    
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <span class="text-indigo-400 fw-bold small uppercase d-block">${s.game_name}</span>
+                            <span class="badge bg-dark border border-secondary text-secondary">${s.rank_required}</span>
                         </div>
-                        
-                        <p class="mb-3 text-white-50">${s.description}</p>
-                        
-                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary">
-                            <span class="small text-white fw-bold">
-                                <i class="fas fa-user-circle me-1 text-warning"></i>${s.gamertag}
-                            </span>
-                            <span class="small ${s.mic_required ? 'text-success' : 'text-danger'} fw-bold">
-                                <i class="fas fa-microphone me-1"></i>${s.mic_required ? 'MIC ON' : 'MIC OFF'}
-                            </span>
-                        </div>
+                        ${esMio ? `
+                            <button onclick="event.stopPropagation(); eliminarSquad(${s.id})" 
+                                    class="btn btn-sm btn-outline-danger border-0 shadow-none" 
+                                    style="z-index: 10;" 
+                                    title="Eliminar mi publicación">
+                                <i class="fas fa-trash-alt fa-lg">Eliminar</i>
+                            </button>` : ''}
                     </div>
-                </div>`;
-            
-            lista.innerHTML += squadHtml;
-        });
-
-    } catch (e) { 
-        console.error("Error cargando squads:", e); 
+                    <p class="mb-3 text-white-50 text-truncate">${s.description}</p>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <span class="small text-white fw-bold">
+                            <i class="fas fa-user-circle me-1 text-warning"></i>${s.gamertag}
+                        </span>
+                        <span class="small ${s.mic_required ? 'text-success' : 'text-danger'} fw-bold">
+                            <i class="fas fa-microphone"></i> ${s.mic_required ? 'ON' : 'OFF'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            `;
+        }).join('');
+    } catch (e) { console.error(e); }
     }
-}
 
+    // 4. Ver información en el Modal
+    async function abrirDetalle(id) {
+        try {
+            const res = await fetch(`/api/squads/${id}/`, {
+                method: 'GET',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!res.ok) throw new Error("Error al obtener datos");
+
+            const s = await res.json();
+
+            // Llenar Modal
+            document.getElementById('modalGame').innerText = s.game_name || "Juego";
+            document.getElementById('modalGamertag').innerText = s.gamertag || "Usuario";
+            document.getElementById('modalDesc').innerText = s.description || "Sin descripción";
+            document.getElementById('modalRank').innerText = s.rank_required || "N/A";
+            
+            const elMic = document.getElementById('modalMic');
+            if (elMic) {
+                elMic.innerHTML = s.mic_required ? 
+                    '<span class="text-success"><i class="fas fa-check-circle"></i> Mic ON</span>' : 
+                    '<span class="text-danger"><i class="fas fa-times-circle"></i> Mic OFF</span>';
+            }
+
+            const modalElement = document.getElementById('squadModal');
+            if (typeof bootstrap !== 'undefined') {
+                const instance = bootstrap.Modal.getOrCreateInstance(modalElement);
+                instance.show();
+            }
+        } catch (e) {
+            console.error("Error modal:", e);
+            alert("No se pudo cargar el detalle.");
+        }
+    }
+
+    // 5. Crear Squad
     async function crear() {
-        const body = {
+        const bodyData = {
             game: document.getElementById('select-juego').value,
             rank_required: document.getElementById('rango').value,
             description: document.getElementById('desc').value,
             mic_required: document.getElementById('mic').checked
         };
-        const res = await fetch('/api/squads/', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
-            body: JSON.stringify(body)
-        });
-        if (res.ok) {
-            document.getElementById('formCrear').reset();
-            cargarSquads();
-            actualizarStats();
-        }
+
+        try {
+            const res = await fetch('/api/squads/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify(bodyData)
+            });
+
+            if (res.ok) {
+                document.getElementById('formCrear').reset();
+                cargarSquads();
+                actualizarStats();
+                alert("¡Publicado!");
+            } else {
+                alert("Error al publicar. Revisa los campos.");
+            }
+        } catch (e) { console.error(e); }
     }
 
+    // 6. Eliminar Squad
     async function eliminarSquad(id) {
-        if (!confirm("¿Borrar anuncio?")) return;
-        const res = await fetch(`/api/squads/${id}/`, {
-            method: 'DELETE',
-            headers: {'Authorization': `Bearer ${token}`}
-        });
-        if (res.ok) { cargarSquads(); actualizarStats(); }
-        else if (res.status === 403) alert("No tienes permiso.");
+        if (!confirm("¿Eliminar este anuncio?")) return;
+
+        try {
+            const res = await fetch(`/api/squads/${id}/`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                cargarSquads();
+                actualizarStats();
+            } else {
+                alert("No tienes permiso.");
+            }
+        } catch (e) { console.error(e); }
     }
 
-    function actualizarStats() {
-        document.getElementById('stat-total').innerText = Math.floor(Math.random() * 40) + 15;
-        document.getElementById('stat-users').innerText = Math.floor(Math.random() * 15) + 5;
-        document.getElementById('stat-hoy').innerText = Math.floor(Math.random() * 8) + 1;
+    // 7. Estadísticas
+    async function actualizarStats() {
+        try {
+            const res = await fetch('/api/stats/', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('stat-total').innerText = data.squads_total;
+                document.getElementById('stat-users').innerText = data.usuarios;
+                document.getElementById('stat-hoy').innerText = data.squads_hoy;
+            }
+        } catch (e) { console.error("Error stats:", e); }
     }
 </script>
-{% endblock %}  
+{% endblock %}
