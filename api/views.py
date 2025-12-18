@@ -6,6 +6,7 @@ from .serializers import UserSerializer, GameSerializer, SquadRequestSerializer
 from django.shortcuts import render
 from rest_framework.exceptions import PermissionDenied
 from django.utils import timezone
+from django.contrib.auth.decorators import login_required
 
 # --- VISTAS DE NAVEGACIÓN (FRONTEND) ---
 
@@ -13,6 +14,7 @@ def index_view(request):
     """Renderiza la página de inicio (Login/Registro)."""
     return render(request, 'index.html')
 
+@login_required
 def dashboard_view(request):
     """Renderiza el muro principal donde se ven los squads."""
     return render(request, 'dashboard.html')
